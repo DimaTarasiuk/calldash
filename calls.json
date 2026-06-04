@@ -42,7 +42,7 @@
           "hour": "05:00",
           "total": 0,
           "accepted": 0,
-          "agreed": 0,
+          "agreed": 12,
           "callback": 0
         },
         {
@@ -63,7 +63,7 @@
           "hour": "08:00",
           "total": 0,
           "accepted": 0,
-          "agreed": 0,
+          "agreed": 12,
           "callback": 0
         },
         {
@@ -75,7 +75,7 @@
         },
         {
           "hour": "10:00",
-          "total": 0,
+          "total": 1,
           "accepted": 0,
           "agreed": 0,
           "callback": 0
@@ -96,17 +96,17 @@
         },
         {
           "hour": "13:00",
-          "total": 1,
-          "accepted": 0,
-          "agreed": 0,
-          "callback": 1
-        },
-        {
-          "hour": "14:00",
           "total": 0,
           "accepted": 0,
           "agreed": 0,
           "callback": 0
+        },
+        {
+          "hour": "14:00",
+          "total": 0,
+          "accepted": 12,
+          "agreed": 2,
+          "callback": 12
         },
         {
           "hour": "15:00",
@@ -117,17 +117,17 @@
         },
         {
           "hour": "16:00",
-          "total": 0,
-          "accepted": 0,
-          "agreed": 0,
-          "callback": 0
+          "total": 35,
+          "accepted": 19,
+          "agreed": 13,
+          "callback": 8
         },
         {
           "hour": "17:00",
-          "total": 0,
-          "accepted": 0,
-          "agreed": 0,
-          "callback": 0
+          "total": 34,
+          "accepted": 10,
+          "agreed": 4,
+          "callback": 6
         },
         {
           "hour": "18:00",

@@ -7,6 +7,31 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+
+  .l-item {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.l-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.l-item:not(.active) {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.l-item .l-dot {
+  transition: opacity 0.2s;
+}
+
+.l-item:not(.active) .l-dot {
+  opacity: 0.3;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0f1117;--bg2:#171a23;--bg3:#1e2230;
@@ -21,7 +46,6 @@
 }
 body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;padding:1.5rem 2rem}
 
-/* header */
 .header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
 .title-label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
 h1{font-size:24px;font-weight:300;letter-spacing:-.02em}
@@ -29,7 +53,6 @@ h1 span{color:var(--blue);font-weight:500}
 .clock{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--now);letter-spacing:.04em}
 .clock-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;text-align:right;margin-bottom:4px}
 
-/* ── INPUT PANEL ── */
 .input-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem}
 .input-title{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .btn-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -48,11 +71,9 @@ h1 span{color:var(--blue);font-weight:500}
 .call-btn .btn-hint{font-size:10px;opacity:.55}
 .call-btn .btn-count{font-family:var(--mono);font-size:15px;font-weight:500}
 
-/* flash animation */
 @keyframes flash{0%{opacity:1}40%{opacity:.4}100%{opacity:1}}
 .call-btn.flash{animation:flash .3s ease}
 
-/* ── METRICS ── */
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem}
 .metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.875rem 1rem;position:relative;overflow:hidden}
 .metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0}
@@ -70,29 +91,75 @@ h1 span{color:var(--blue);font-weight:500}
 .metric.red .m-value{color:var(--red)}
 .m-sub{font-size:12px;color:var(--muted);margin-top:3px}
 
-/* ── CHART CARD ── */
 .chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1rem}
 .chart-label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
 .chart-wrap{position:relative;width:100%;height:260px}
 .chart-wrap-sm{position:relative;width:100%;height:180px}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 
-/* legend */
 .legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
 .l-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--dim)}
 .l-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 
-/* tabs */
 .tabs{display:flex;gap:4px;background:var(--bg3);border-radius:7px;padding:3px;margin-bottom:1rem;width:fit-content}
 .tab{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:transparent;border:none;border-radius:5px;padding:5px 14px;cursor:pointer;transition:background .15s,color .15s}
 .tab.active{background:var(--bg2);color:var(--text);border:1px solid var(--border2)}
 
-/* status dot */
 .live-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:.08em}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
+.chart-hint{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.05em}
+.chart-hint span{color:var(--blue);opacity:.7}
+
 .footer{margin-top:1.5rem;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em;border-top:1px solid var(--border);padding-top:1rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+/* ── MODAL ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);
+  backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
+  padding:1.75rem;width:100%;max-width:380px;position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);
+}
+.modal-title{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.modal-sub{font-size:18px;font-weight:300;color:var(--text);margin-bottom:1.5rem}
+.modal-sub span{color:var(--blue);font-weight:500}
+.modal-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.field-group{display:flex;flex-direction:column;gap:5px}
+.field-label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.field-label.blue  {color:var(--blue)}
+.field-label.green {color:var(--green)}
+.field-label.amber {color:var(--amber)}
+.field-label.red   {color:var(--red)}
+.field-input{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:7px;
+  color:var(--text);font-family:var(--mono);font-size:16px;font-weight:500;
+  padding:8px 10px;width:100%;outline:none;transition:border-color .15s;
+}
+.field-input:focus{border-color:var(--blue)}
+.modal-note{font-size:11px;color:var(--muted);margin-bottom:1.25rem;line-height:1.5}
+.modal-actions{display:flex;gap:8px}
+.btn-save{
+  flex:1;background:var(--blue);color:#fff;border:none;border-radius:8px;
+  padding:10px;font-family:var(--sans);font-size:14px;font-weight:500;cursor:pointer;
+  transition:opacity .15s;
+}
+.btn-save:hover{opacity:.85}
+.btn-cancel{
+  background:var(--bg3);color:var(--muted);border:1px solid var(--border2);border-radius:8px;
+  padding:10px 16px;font-family:var(--sans);font-size:14px;cursor:pointer;
+  transition:color .15s;
+}
+.btn-cancel:hover{color:var(--text)}
+.modal-close{
+  position:absolute;top:14px;right:14px;background:transparent;border:none;
+  color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:4px;
+}
+.modal-close:hover{color:var(--text)}
 
 @media(max-width:600px){body{padding:1rem}.two-col{grid-template-columns:1fr}.btn-row{grid-template-columns:1fr 1fr}}
 </style>
@@ -111,7 +178,7 @@ h1 span{color:var(--blue);font-weight:500}
   </div>
 </div>
 
-<!-- ── INPUT PANEL ── -->
+<!-- INPUT PANEL -->
 <div class="input-panel">
   <p class="input-title">Записати дзвінок</p>
   <div class="btn-row">
@@ -138,7 +205,7 @@ h1 span{color:var(--blue);font-weight:500}
   </div>
 </div>
 
-<!-- ── METRICS ── -->
+<!-- METRICS -->
 <div class="metrics" id="metrics">
   <div class="metric blue"><p class="m-label">Всього сьогодні</p><p class="m-value" id="m-total">0</p></div>
   <div class="metric green"><p class="m-label">Прийнято</p><p class="m-value" id="m-accepted">0</p><p class="m-sub" id="m-acc-pct">— %</p></div>
@@ -147,46 +214,80 @@ h1 span{color:var(--blue);font-weight:500}
   <div class="metric purple"><p class="m-label">Найкращий час</p><p class="m-value" id="m-best">—</p><p class="m-sub" id="m-best-sub">—</p></div>
 </div>
 
-<!-- ── MAIN CHART ── -->
+<!-- MAIN CHART -->
 <div class="chart-card">
   <p class="chart-label">Обсяг дзвінків · сьогодні по годинах</p>
-  <div class="legend">
-    <span class="l-item"><span class="l-dot" style="background:#4e8ef7"></span>Всього</span>
-    <span class="l-item"><span class="l-dot" style="background:#36c98e"></span>Прийнято</span>
-    <span class="l-item"><span class="l-dot" style="background:#f0a030"></span>Погоджено</span>
-    <span class="l-item"><span class="l-dot" style="background:#e05555"></span>Передзвонити</span>
-    <span class="l-item"><span style="display:inline-block;width:2px;height:10px;background:#e05555;opacity:.5;margin-right:3px;vertical-align:middle"></span>Зараз</span>
-  </div>
+  <div class="legend" id="main-legend">
+  <span class="l-item active" data-dataset="0"><span class="l-dot" style="background:#4e8ef7"></span>Всього</span>
+  <span class="l-item active" data-dataset="1"><span class="l-dot" style="background:#36c98e"></span>Прийнято</span>
+  <span class="l-item active" data-dataset="2"><span class="l-dot" style="background:#f0a030"></span>Погоджено</span>
+  <span class="l-item active" data-dataset="3"><span class="l-dot" style="background:#e05555"></span>Передзвонити</span>
+  <span style="display:inline-block;width:2px;height:10px;background:#e05555;opacity:.5;margin-right:3px;vertical-align:middle"></span>Зараз
+  </span>
+</div>
   <div class="chart-wrap"><canvas id="barChart" role="img" aria-label="Обсяг дзвінків по годинах"></canvas></div>
 </div>
 
-<!-- ── CONVERSION CHARTS ── -->
+<!-- CONVERSION CHARTS -->
 <div class="two-col">
   <div class="chart-card">
     <p class="chart-label">Прийнято / Всього (%)</p>
-    <div class="chart-wrap-sm"><canvas id="lineChart1" role="img" aria-label="Конверсія прийнятих"></canvas></div>
+    <div class="chart-wrap-sm"><canvas id="lineChart1" role="img"></canvas></div>
   </div>
   <div class="chart-card">
     <p class="chart-label">Погоджено / Прийнято (%)</p>
-    <div class="chart-wrap-sm"><canvas id="lineChart2" role="img" aria-label="Конверсія погоджених"></canvas></div>
+    <div class="chart-wrap-sm"><canvas id="lineChart2" role="img"></canvas></div>
   </div>
 </div>
 
-<!-- ── HISTORY TABS ── -->
+<!-- HISTORY -->
 <div class="chart-card">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
     <p class="chart-label" style="margin:0">Історія по днях</p>
     <div class="tabs">
       <button class="tab active" onclick="setHistView('bar',this)">Стовпці</button>
       <button class="tab" onclick="setHistView('line',this)">Лінія</button>
     </div>
   </div>
-  <div style="position:relative;width:100%;height:200px"><canvas id="histChart" role="img" aria-label="Історія дзвінків по днях"></canvas></div>
+  <p class="chart-hint">Натисніть на день щоб <span>редагувати підсумки</span></p>
+  <div style="position:relative;width:100%;height:200px"><canvas id="histChart" role="img"></canvas></div>
 </div>
 
 <div class="footer">
-  <span>// CALL TRACKER v1.0</span>
+  <span>// CALL TRACKER v1.1</span>
   <span id="footer-date"></span>
+</div>
+
+<!-- ── EDIT MODAL ── -->
+<div class="modal-overlay" id="editModal" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <p class="modal-title" id="modal-title">Редагування</p>
+    <p class="modal-sub" id="modal-sub">—</p>
+    <div class="modal-fields">
+      <div class="field-group">
+        <label class="field-label blue" for="f-total">Всього</label>
+        <input class="field-input" type="number" min="0" id="f-total">
+      </div>
+      <div class="field-group">
+        <label class="field-label green" for="f-accepted">Прийнято</label>
+        <input class="field-input" type="number" min="0" id="f-accepted">
+      </div>
+      <div class="field-group">
+        <label class="field-label amber" for="f-agreed">Погоджено</label>
+        <input class="field-input" type="number" min="0" id="f-agreed">
+      </div>
+      <div class="field-group">
+        <label class="field-label red" for="f-callback">Передзвонити</label>
+        <input class="field-input" type="number" min="0" id="f-callback">
+      </div>
+    </div>
+    <p class="modal-note" id="modal-note"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Скасувати</button>
+      <button class="btn-save" onclick="saveEdit()">Зберегти</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -197,11 +298,14 @@ const COLORS = {
   grid:'rgba(255,255,255,0.05)', tick:'#6b7080',
 };
 
+window.nowLineVisible = true;
+
 let barChart, lineChart1, lineChart2, histChart;
 let todaySlots = [];
 let histData = [];
 let histViewType = 'bar';
 let currentHour = '';
+let todayDate = '';
 
 // ── Clock ─────────────────────────────────────────────────────
 function updateClock() {
@@ -211,9 +315,39 @@ function updateClock() {
     String(n.getMinutes()).padStart(2,'0') + ':' +
     String(n.getSeconds()).padStart(2,'0');
   currentHour = String(n.getHours()).padStart(2,'0') + ':00';
+  todayDate   = n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+// Динамічне перемикання датасетів у легенді
+function setupLegendToggle() {
+  const legend = document.getElementById('main-legend');
+  if (!legend || !barChart) return;
+
+  legend.querySelectorAll('.l-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const datasetKey = item.getAttribute('data-dataset');
+
+      if (datasetKey === 'now') {
+        // Перемикаємо лінію "Зараз"
+        window.nowLineVisible = !window.nowLineVisible;
+        item.classList.toggle('active', window.nowLineVisible);
+      } 
+      else {
+        // Перемикаємо звичайний датасет
+        const index = parseInt(datasetKey);
+        const meta = barChart.getDatasetMeta(index);
+        if (meta) {
+          meta.hidden = !meta.hidden;
+          item.classList.toggle('active', !meta.hidden);
+        }
+      }
+
+      barChart.update();
+    });
+  });
+}
 
 // ── API ───────────────────────────────────────────────────────
 async function logCall(type) {
@@ -221,26 +355,106 @@ async function logCall(type) {
   btn.classList.add('flash');
   btn.disabled = true;
   setTimeout(() => { btn.classList.remove('flash'); btn.disabled = false; }, 350);
-
   try {
     await fetch('/api/call?type=' + type, { method: 'POST' });
     await refreshToday();
-  } catch(e) {
-    console.error('API error', e);
-  }
+  } catch(e) { console.error('API error', e); }
 }
 
 async function refreshToday() {
   const res = await fetch('/api/today');
-  todaySlots = await res.json();
+  todaySlots = await res.json() || [];
   renderAll();
 }
 
 async function refreshHistory() {
   const res = await fetch('/api/history');
-  histData = await res.json();
+  histData = await res.json() || [];
   renderHistory();
 }
+
+// ── Modal state ───────────────────────────────────────────────
+let editMode = null; // 'slot' | 'day'
+let editDate = '';
+let editHour = '';
+
+function openSlotModal(date, hour, slot) {
+  editMode = 'slot';
+  editDate = date;
+  editHour = hour;
+  document.getElementById('modal-title').textContent = 'Редагування години';
+  document.getElementById('modal-sub').innerHTML = `<span>${hour}</span> · ${date}`;
+  document.getElementById('modal-note').textContent =
+    'Змінюйте будь-яке значення. Від\'ємні значення обнулюються.';
+  document.getElementById('f-total').value    = slot.total    || 0;
+  document.getElementById('f-accepted').value = slot.accepted || 0;
+  document.getElementById('f-agreed').value   = slot.agreed   || 0;
+  document.getElementById('f-callback').value = slot.callback || 0;
+  document.getElementById('editModal').classList.add('open');
+  document.getElementById('f-total').focus();
+}
+
+function openDayModal(daySummary) {
+  editMode = 'day';
+  editDate = daySummary.date;
+  editHour = '';
+  document.getElementById('modal-title').textContent = 'Редагування дня';
+  document.getElementById('modal-sub').innerHTML = `<span>${daySummary.date}</span>`;
+  document.getElementById('modal-note').textContent =
+    'Редагуєте підсумок дня. Дельта буде застосована до першого непустого слоту.';
+  document.getElementById('f-total').value    = daySummary.total    || 0;
+  document.getElementById('f-accepted').value = daySummary.accepted || 0;
+  document.getElementById('f-agreed').value   = daySummary.agreed   || 0;
+  document.getElementById('f-callback').value = daySummary.callback || 0;
+  document.getElementById('editModal').classList.add('open');
+  document.getElementById('f-total').focus();
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editMode = null;
+}
+
+function closeModalOnOverlay(e) {
+  if (e.target === document.getElementById('editModal')) closeModal();
+}
+
+async function saveEdit() {
+  const payload = {
+    total:    Math.max(0, parseInt(document.getElementById('f-total').value)    || 0),
+    accepted: Math.max(0, parseInt(document.getElementById('f-accepted').value) || 0),
+    agreed:   Math.max(0, parseInt(document.getElementById('f-agreed').value)   || 0),
+    callback: Math.max(0, parseInt(document.getElementById('f-callback').value) || 0),
+  };
+
+  try {
+    if (editMode === 'slot') {
+      await fetch(`/api/slot?date=${editDate}&hour=${encodeURIComponent(editHour)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } else if (editMode === 'day') {
+      await fetch(`/api/day?date=${editDate}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    }
+    closeModal();
+    await refreshToday();
+    await refreshHistory();
+  } catch(e) {
+    console.error('Save error', e);
+  }
+}
+
+// Keyboard: Escape closes modal, Enter saves
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('editModal').classList.contains('open')) return;
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && e.ctrlKey) saveEdit();
+});
 
 // ── Helpers ───────────────────────────────────────────────────
 function pct(a, b) { return b === 0 ? 0 : Math.round((a / b) * 100); }
@@ -252,37 +466,34 @@ function todayTotals() {
 }
 
 function currentSlot() {
-  return (todaySlots || []).find(s => s.hour === currentHour) || { total:0, accepted:0, agreed:0 };
+  return (todaySlots || []).find(s => s.hour === currentHour) || { total:0, accepted:0, agreed:0, callback:0 };
 }
 
 // ── Metrics ───────────────────────────────────────────────────
 function renderMetrics() {
-  const { tot, acc, agr } = todayTotals();
-  document.getElementById('m-total').textContent = tot;
+  const { tot, acc, agr, cb } = todayTotals();
+  document.getElementById('m-total').textContent    = tot;
   document.getElementById('m-accepted').textContent = acc;
-  document.getElementById('m-agreed').textContent = agr;
-  document.getElementById('m-acc-pct').textContent = tot ? pct(acc, tot) + '% від всіх' : '— %';
-  document.getElementById('m-agr-pct').textContent = acc ? pct(agr, acc) + '% від прийнятих' : '— %';
-  const { cb } = todayTotals();
+  document.getElementById('m-agreed').textContent   = agr;
   document.getElementById('m-callback').textContent = cb;
-  document.getElementById('m-cb-pct').textContent = tot ? pct(cb, tot) + '% від всіх' : '— %';
+  document.getElementById('m-acc-pct').textContent  = tot ? pct(acc, tot) + '% від всіх' : '— %';
+  document.getElementById('m-agr-pct').textContent  = acc ? pct(agr, acc) + '% від прийнятих' : '— %';
+  document.getElementById('m-cb-pct').textContent   = tot ? pct(cb, tot) + '% від всіх' : '— %';
 
-  // current hour counts
   const cs = currentSlot();
   document.getElementById('cnt-total').textContent    = cs.total;
   document.getElementById('cnt-accepted').textContent = cs.accepted;
   document.getElementById('cnt-agreed').textContent   = cs.agreed;
   document.getElementById('cnt-callback').textContent = cs.callback || 0;
 
-  // best hour
   if (todaySlots && todaySlots.length) {
     const best = [...todaySlots].sort((a,b) => b.agreed - a.agreed)[0];
-    document.getElementById('m-best').textContent = best.agreed > 0 ? best.hour : '—';
+    document.getElementById('m-best').textContent    = best.agreed > 0 ? best.hour : '—';
     document.getElementById('m-best-sub').textContent = best.agreed > 0 ? best.agreed + ' погоджень' : 'поки немає даних';
   }
 }
 
-// ── Bar chart ─────────────────────────────────────────────────
+// ── Chart common styles ───────────────────────────────────────
 const axisStyle = { color: COLORS.tick, font: { family: "'IBM Plex Mono', monospace", size: 10 } };
 const gridStyle = { color: COLORS.grid };
 const tooltipStyle = {
@@ -293,7 +504,7 @@ const tooltipStyle = {
   padding:10,
 };
 
-// Chart.js plugin: draws a thin red vertical line at the current hour bar
+// ── Now-line plugin ───────────────────────────────────────────
 const nowLinePlugin = {
   id: 'nowLine',
   afterDraw(chart) {
@@ -302,17 +513,13 @@ const nowLinePlugin = {
     const labels = chart.data.labels || [];
     const idx = labels.indexOf(currentHour);
     if (idx < 0 || !meta.data[idx]) return;
-
-    const bar  = meta.data[idx];
-    const x    = bar.x + bar.width / 2;
-    const yTop = chart.chartArea.top;
-    const yBot = chart.chartArea.bottom;
-    const ctx  = chart.ctx;
-
+    const bar = meta.data[idx];
+    const x   = bar.x + bar.width / 2;
+    const ctx = chart.ctx;
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(x, yTop);
-    ctx.lineTo(x, yBot);
+    ctx.moveTo(x, chart.chartArea.top);
+    ctx.lineTo(x, chart.chartArea.bottom);
     ctx.strokeStyle = '#e05555';
     ctx.lineWidth   = 1.5;
     ctx.setLineDash([4, 3]);
@@ -321,34 +528,129 @@ const nowLinePlugin = {
   }
 };
 
+// ── Bar chart ─────────────────────────────────────────────────
 function renderBarChart() {
-  // Always build full 24-hour labels array
   const all24 = Array.from({length:24}, (_,h) => String(h).padStart(2,'0')+':00');
-
-  // Map existing slot data onto the 24h grid
   const slotMap = {};
   (todaySlots || []).forEach(s => { slotMap[s.hour] = s; });
 
-  const totals   = all24.map(h => (slotMap[h] || {}).total    || 0);
-  const accepted = all24.map(h => (slotMap[h] || {}).accepted || 0);
-  const agreed   = all24.map(h => (slotMap[h] || {}).agreed   || 0);
-  const callback = all24.map(h => (slotMap[h] || {}).callback || 0);
+  const totals   = all24.map(h => (slotMap[h]||{}).total    || 0);
+  const accepted = all24.map(h => (slotMap[h]||{}).accepted || 0);
+  const agreed   = all24.map(h => (slotMap[h]||{}).agreed   || 0);
+  const callback = all24.map(h => (slotMap[h]||{}).callback || 0);
+
+  // Click plugin — відкриває модальне вікно редагування
+  const clickPlugin = {
+    id: 'barClick',
+    afterEvent(chart, args) {
+      if (args.event.type !== 'click') return;
+      const points = chart.getElementsAtEventForMode(args.event.native, 'index', { intersect: false }, true);
+      if (!points.length) return;
+      const idx  = points[0].index;
+      const hour = all24[idx];
+      const slot = slotMap[hour] || { total:0, accepted:0, agreed:0, callback:0, hour };
+      openSlotModal(todayDate, hour, slot);
+    }
+  };
+
+  if (barChart) barChart.destroy();
+
+  barChart = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    plugins: [nowLinePlugin, clickPlugin],
+    data: {
+      labels: all24,
+      datasets: [
+        { 
+          label: 'Всього', 
+          data: totals, 
+          backgroundColor: COLORS.blue,  
+          borderRadius: 3,
+          hidden: true 
+        },
+        { 
+          label: 'Прийнято', 
+          data: accepted, 
+          backgroundColor: COLORS.green, 
+          borderRadius: 3,
+          hidden: false 
+        },
+        { 
+          label: 'Погоджено', 
+          data: agreed,   
+          backgroundColor: COLORS.amber, 
+          borderRadius: 3,
+          hidden: false 
+        },
+        { 
+          label: 'Передзвонити', 
+          data: callback, 
+          backgroundColor: COLORS.red,   
+          borderRadius: 3,
+          hidden: false 
+        },
+      ]
+    },
+    options: {
+      responsive: true, 
+      maintainAspectRatio: false,
+      plugins: { 
+        legend: { display: false },
+        tooltip: tooltipStyle 
+      },
+      scales: {
+        x: { ticks:{ ...axisStyle, autoSkip:true, maxTicksLimit:12, maxRotation:0 }, grid: gridStyle },
+        y: { beginAtZero:true, ticks: axisStyle, grid: gridStyle }
+      }
+    }
+  });
+
+  document.getElementById('barChart').style.cursor = 'pointer';
+
+  setupLegendToggle();
+}
+
+
+
+  const all24 = Array.from({length:24}, (_,h) => String(h).padStart(2,'0')+':00');
+  const slotMap = {};
+  (todaySlots || []).forEach(s => { slotMap[s.hour] = s; });
+
+  const totals   = all24.map(h => (slotMap[h]||{}).total    || 0);
+  const accepted = all24.map(h => (slotMap[h]||{}).accepted || 0);
+  const agreed   = all24.map(h => (slotMap[h]||{}).agreed   || 0);
+  const callback = all24.map(h => (slotMap[h]||{}).callback || 0);
+
+  // Click plugin — opens slot editor
+  const clickPlugin = {
+    id: 'barClick',
+    afterEvent(chart, args) {
+      if (args.event.type !== 'click') return;
+      const points = chart.getElementsAtEventForMode(args.event.native, 'index', { intersect: false }, true);
+      if (!points.length) return;
+      const idx  = points[0].index;
+      const hour = all24[idx];
+      const slot = slotMap[hour] || { total:0, accepted:0, agreed:0, callback:0, hour };
+      openSlotModal(todayDate, hour, slot);
+    }
+  };
 
   if (barChart) barChart.destroy();
   barChart = new Chart(document.getElementById('barChart'), {
     type: 'bar',
-    plugins: [nowLinePlugin],
+    plugins: [nowLinePlugin, clickPlugin],
     data: {
       labels: all24,
       datasets: [
-        { label:'Всього',    data: totals,   backgroundColor: COLORS.blue,  borderRadius: 3 },
-        { label:'Прийнято',  data: accepted, backgroundColor: COLORS.green, borderRadius: 3 },
-        { label:'Погоджено', data: agreed,   backgroundColor: COLORS.amber, borderRadius: 3 },
+        { label:'Всього',       data: totals,   backgroundColor: COLORS.blue,  borderRadius: 3 },
+        { label:'Прийнято',     data: accepted, backgroundColor: COLORS.green, borderRadius: 3 },
+        { label:'Погоджено',    data: agreed,   backgroundColor: COLORS.amber, borderRadius: 3 },
         { label:'Передзвонити', data: callback, backgroundColor: COLORS.red,   borderRadius: 3 },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      cursor: 'pointer',
       plugins: { legend:{ display:false }, tooltip: tooltipStyle },
       scales: {
         x: { ticks:{ ...axisStyle, autoSkip:true, maxTicksLimit:12, maxRotation:0 }, grid: gridStyle },
@@ -356,25 +658,18 @@ function renderBarChart() {
       }
     }
   });
-}
+
+  // Change cursor on hover
+  document.getElementById('barChart').style.cursor = 'pointer';
+
 
 // ── Line charts ───────────────────────────────────────────────
 function renderLineCharts() {
   const slots = todaySlots || [];
   if (slots.length === 0) return;
-
   const labels  = slots.map(s => s.hour);
   const convAcc = slots.map(s => pct(s.accepted, s.total));
   const convAgr = slots.map(s => pct(s.agreed, s.accepted));
-
-  const lineOpts = (color, dimColor, yLabel) => ({
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend:{ display:false }, tooltip: tooltipStyle },
-    scales: {
-      x: { ticks:{ ...axisStyle, autoSkip:false, maxRotation:45 }, grid: gridStyle },
-      y: { min:0, max:100, ticks:{ ...axisStyle, callback: v => v+'%' }, grid: gridStyle }
-    }
-  });
 
   const lineDs = (data, color, dimColor) => ({
     data, borderColor: color, backgroundColor: dimColor,
@@ -386,36 +681,60 @@ function renderLineCharts() {
   lineChart1 = new Chart(document.getElementById('lineChart1'), {
     type: 'line',
     data: { labels, datasets: [{ ...lineDs(convAcc, COLORS.green, COLORS.greenDim), label:'Прийнято %' }] },
-    options: lineOpts(COLORS.green, COLORS.greenDim)
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip: tooltipStyle },
+      scales: {
+        x: { ticks:{ ...axisStyle, autoSkip:false, maxRotation:45 }, grid: gridStyle },
+        y: { min:0, max:100, ticks:{ ...axisStyle, callback: v => v+'%' }, grid: gridStyle }
+      }
+    }
   });
 
   if (lineChart2) lineChart2.destroy();
   lineChart2 = new Chart(document.getElementById('lineChart2'), {
     type: 'line',
     data: { labels, datasets: [{ ...lineDs(convAgr, COLORS.amber, COLORS.amberDim), label:'Погоджено %' }] },
-    options: lineOpts(COLORS.amber, COLORS.amberDim)
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip: tooltipStyle },
+      scales: {
+        x: { ticks:{ ...axisStyle, autoSkip:false, maxRotation:45 }, grid: gridStyle },
+        y: { min:0, max:100, ticks:{ ...axisStyle, callback: v => v+'%' }, grid: gridStyle }
+      }
+    }
   });
 }
 
 // ── History chart ─────────────────────────────────────────────
 function renderHistory() {
   if (!histData || histData.length === 0) return;
-
-  const labels   = histData.map(d => d.date.slice(5)); // MM-DD
+  const labels   = histData.map(d => d.date.slice(5));
   const totals   = histData.map(d => d.total);
   const accepted = histData.map(d => d.accepted);
   const agreed   = histData.map(d => d.agreed);
 
-  if (histChart) histChart.destroy();
+  // Click plugin — opens day editor
+  const clickPlugin = {
+    id: 'histClick',
+    afterEvent(chart, args) {
+      if (args.event.type !== 'click') return;
+      const points = chart.getElementsAtEventForMode(args.event.native, 'index', { intersect: false }, true);
+      if (!points.length) return;
+      const idx = points[0].index;
+      openDayModal(histData[idx]);
+    }
+  };
 
+  if (histChart) histChart.destroy();
   const isLine = histViewType === 'line';
+
   const mkDs = (label, data, color, dimColor) => ({
     label, data,
     backgroundColor: isLine ? dimColor : color,
     borderColor: color,
     borderWidth: isLine ? 2 : 0,
-    fill: isLine,
-    tension: isLine ? 0.4 : undefined,
+    fill: isLine, tension: isLine ? 0.4 : undefined,
     borderRadius: isLine ? undefined : 3,
     pointRadius: isLine ? 3 : undefined,
     pointBackgroundColor: isLine ? color : undefined,
@@ -423,6 +742,7 @@ function renderHistory() {
 
   histChart = new Chart(document.getElementById('histChart'), {
     type: isLine ? 'line' : 'bar',
+    plugins: [clickPlugin],
     data: {
       labels,
       datasets: [
@@ -440,6 +760,8 @@ function renderHistory() {
       }
     }
   });
+
+  document.getElementById('histChart').style.cursor = 'pointer';
 }
 
 function setHistView(type, el) {
@@ -456,7 +778,7 @@ function renderAll() {
   renderLineCharts();
 }
 
-// ── Init & polling ────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
 document.getElementById('footer-date').textContent =
   '// ' + new Date().toLocaleString('uk-UA', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
 
@@ -466,7 +788,6 @@ async function init() {
 }
 init();
 
-// Poll every 60 sec for multi-device sync
 setInterval(async () => {
   await refreshToday();
   await refreshHistory();
