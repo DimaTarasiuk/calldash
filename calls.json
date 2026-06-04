@@ -1,0 +1,177 @@
+{
+  "days": [
+    {
+      "date": "2026-06-04",
+      "slots": [
+        {
+          "hour": "00:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "01:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "02:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "03:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "04:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "05:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "06:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "07:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "08:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "09:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "10:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "11:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "12:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "13:00",
+          "total": 1,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 1
+        },
+        {
+          "hour": "14:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "15:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "16:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "17:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "18:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "19:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "20:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "21:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "22:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        },
+        {
+          "hour": "23:00",
+          "total": 0,
+          "accepted": 0,
+          "agreed": 0,
+          "callback": 0
+        }
+      ]
+    }
+  ]
+}

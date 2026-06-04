@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Call Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--bg2:#171a23;--bg3:#1e2230;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0;--muted:#6b7080;--dim:#9aa0b0;
+  --blue:#4e8ef7;--blue-dim:rgba(78,142,247,0.15);
+  --green:#36c98e;--green-dim:rgba(54,201,142,0.12);
+  --amber:#f0a030;--amber-dim:rgba(240,160,48,0.12);
+  --red:#e05555;--red-dim:rgba(224,85,85,0.12);
+  --now:#b46ef5;--now-dim:rgba(180,110,245,0.15);
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;padding:1.5rem 2rem}
+
+/* header */
+.header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
+.title-label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+h1{font-size:24px;font-weight:300;letter-spacing:-.02em}
+h1 span{color:var(--blue);font-weight:500}
+.clock{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--now);letter-spacing:.04em}
+.clock-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;text-align:right;margin-bottom:4px}
+
+/* ── INPUT PANEL ── */
+.input-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem}
+.input-title{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.btn-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.call-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 10px;border-radius:10px;border:1px solid;
+  cursor:pointer;font-family:var(--sans);transition:transform .1s,opacity .15s;
+  user-select:none;
+}
+.call-btn:active{transform:scale(0.96)}
+.call-btn.total  {background:var(--blue-dim);border-color:rgba(78,142,247,.3);color:var(--blue)}
+.call-btn.accepted{background:var(--green-dim);border-color:rgba(54,201,142,.3);color:var(--green)}
+.call-btn.agreed {background:var(--amber-dim);border-color:rgba(240,160,48,.3);color:var(--amber)}
+.call-btn.callback{background:var(--red-dim);border-color:rgba(224,85,85,.3);color:var(--red)}
+.call-btn .btn-label{font-size:12px;font-weight:500;letter-spacing:.02em}
+.call-btn .btn-hint{font-size:10px;opacity:.55}
+.call-btn .btn-count{font-family:var(--mono);font-size:15px;font-weight:500}
+
+/* flash animation */
+@keyframes flash{0%{opacity:1}40%{opacity:.4}100%{opacity:1}}
+.call-btn.flash{animation:flash .3s ease}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.875rem 1rem;position:relative;overflow:hidden}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0}
+.metric.blue::before{background:var(--blue)}
+.metric.green::before{background:var(--green)}
+.metric.amber::before{background:var(--amber)}
+.metric.purple::before{background:var(--now)}
+.m-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.m-value{font-size:26px;font-weight:300;letter-spacing:-.03em;line-height:1}
+.metric.blue   .m-value{color:var(--blue)}
+.metric.green  .m-value{color:var(--green)}
+.metric.amber  .m-value{color:var(--amber)}
+.metric.purple .m-value{color:var(--now);font-size:18px}
+.metric.red::before{background:var(--red)}
+.metric.red .m-value{color:var(--red)}
+.m-sub{font-size:12px;color:var(--muted);margin-top:3px}
+
+/* ── CHART CARD ── */
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1rem}
+.chart-label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.chart-wrap{position:relative;width:100%;height:260px}
+.chart-wrap-sm{position:relative;width:100%;height:180px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+
+/* legend */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.l-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--dim)}
+.l-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* tabs */
+.tabs{display:flex;gap:4px;background:var(--bg3);border-radius:7px;padding:3px;margin-bottom:1rem;width:fit-content}
+.tab{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:transparent;border:none;border-radius:5px;padding:5px 14px;cursor:pointer;transition:background .15s,color .15s}
+.tab.active{background:var(--bg2);color:var(--text);border:1px solid var(--border2)}
+
+/* status dot */
+.live-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:.08em}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.footer{margin-top:1.5rem;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em;border-top:1px solid var(--border);padding-top:1rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+@media(max-width:600px){body{padding:1rem}.two-col{grid-template-columns:1fr}.btn-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <p class="title-label">Моніторинг дзвінків</p>
+    <h1>Call <span>Tracker</span></h1>
+  </div>
+  <div style="text-align:right">
+    <p class="clock-label">ПОТОЧНИЙ ЧАС</p>
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="live-badge" style="justify-content:flex-end;margin-top:4px"><span class="live-dot"></span>LIVE</div>
+  </div>
+</div>
+
+<!-- ── INPUT PANEL ── -->
+<div class="input-panel">
+  <p class="input-title">Записати дзвінок</p>
+  <div class="btn-row">
+    <button class="call-btn total" onclick="logCall('total')" id="btn-total">
+      <span class="btn-label">Дзвінок</span>
+      <span class="btn-hint">загальний</span>
+      <span class="btn-count" id="cnt-total">0</span>
+    </button>
+    <button class="call-btn accepted" onclick="logCall('accepted')" id="btn-accepted">
+      <span class="btn-label">Прийнято</span>
+      <span class="btn-hint">+ дзвінок</span>
+      <span class="btn-count" id="cnt-accepted">0</span>
+    </button>
+    <button class="call-btn agreed" onclick="logCall('agreed')" id="btn-agreed">
+      <span class="btn-label">Погоджено</span>
+      <span class="btn-hint">+ прийнято</span>
+      <span class="btn-count" id="cnt-agreed">0</span>
+    </button>
+    <button class="call-btn callback" onclick="logCall('callback')" id="btn-callback">
+      <span class="btn-label">Передзвонити</span>
+      <span class="btn-hint">після обіду</span>
+      <span class="btn-count" id="cnt-callback">0</span>
+    </button>
+  </div>
+</div>
+
+<!-- ── METRICS ── -->
+<div class="metrics" id="metrics">
+  <div class="metric blue"><p class="m-label">Всього сьогодні</p><p class="m-value" id="m-total">0</p></div>
+  <div class="metric green"><p class="m-label">Прийнято</p><p class="m-value" id="m-accepted">0</p><p class="m-sub" id="m-acc-pct">— %</p></div>
+  <div class="metric amber"><p class="m-label">Погоджено</p><p class="m-value" id="m-agreed">0</p><p class="m-sub" id="m-agr-pct">— %</p></div>
+  <div class="metric red"><p class="m-label">Передзвонити</p><p class="m-value" id="m-callback">0</p><p class="m-sub" id="m-cb-pct">— %</p></div>
+  <div class="metric purple"><p class="m-label">Найкращий час</p><p class="m-value" id="m-best">—</p><p class="m-sub" id="m-best-sub">—</p></div>
+</div>
+
+<!-- ── MAIN CHART ── -->
+<div class="chart-card">
+  <p class="chart-label">Обсяг дзвінків · сьогодні по годинах</p>
+  <div class="legend">
+    <span class="l-item"><span class="l-dot" style="background:#4e8ef7"></span>Всього</span>
+    <span class="l-item"><span class="l-dot" style="background:#36c98e"></span>Прийнято</span>
+    <span class="l-item"><span class="l-dot" style="background:#f0a030"></span>Погоджено</span>
+    <span class="l-item"><span class="l-dot" style="background:#e05555"></span>Передзвонити</span>
+    <span class="l-item"><span style="display:inline-block;width:2px;height:10px;background:#e05555;opacity:.5;margin-right:3px;vertical-align:middle"></span>Зараз</span>
+  </div>
+  <div class="chart-wrap"><canvas id="barChart" role="img" aria-label="Обсяг дзвінків по годинах"></canvas></div>
+</div>
+
+<!-- ── CONVERSION CHARTS ── -->
+<div class="two-col">
+  <div class="chart-card">
+    <p class="chart-label">Прийнято / Всього (%)</p>
+    <div class="chart-wrap-sm"><canvas id="lineChart1" role="img" aria-label="Конверсія прийнятих"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <p class="chart-label">Погоджено / Прийнято (%)</p>
+    <div class="chart-wrap-sm"><canvas id="lineChart2" role="img" aria-label="Конверсія погоджених"></canvas></div>
+  </div>
+</div>
+
+<!-- ── HISTORY TABS ── -->
+<div class="chart-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    <p class="chart-label" style="margin:0">Історія по днях</p>
+    <div class="tabs">
+      <button class="tab active" onclick="setHistView('bar',this)">Стовпці</button>
+      <button class="tab" onclick="setHistView('line',this)">Лінія</button>
+    </div>
+  </div>
+  <div style="position:relative;width:100%;height:200px"><canvas id="histChart" role="img" aria-label="Історія дзвінків по днях"></canvas></div>
+</div>
+
+<div class="footer">
+  <span>// CALL TRACKER v1.0</span>
+  <span id="footer-date"></span>
+</div>
+
+<script>
+const COLORS = {
+  blue:'#4e8ef7', green:'#36c98e', amber:'#f0a030', now:'#b46ef5', red:'#e05555',
+  blueDim:'rgba(78,142,247,0.15)', greenDim:'rgba(54,201,142,0.10)',
+  amberDim:'rgba(240,160,48,0.10)', nowDim:'rgba(180,110,245,0.18)',
+  grid:'rgba(255,255,255,0.05)', tick:'#6b7080',
+};
+
+let barChart, lineChart1, lineChart2, histChart;
+let todaySlots = [];
+let histData = [];
+let histViewType = 'bar';
+let currentHour = '';
+
+// ── Clock ─────────────────────────────────────────────────────
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' +
+    String(n.getMinutes()).padStart(2,'0') + ':' +
+    String(n.getSeconds()).padStart(2,'0');
+  currentHour = String(n.getHours()).padStart(2,'0') + ':00';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── API ───────────────────────────────────────────────────────
+async function logCall(type) {
+  const btn = document.getElementById('btn-' + type);
+  btn.classList.add('flash');
+  btn.disabled = true;
+  setTimeout(() => { btn.classList.remove('flash'); btn.disabled = false; }, 350);
+
+  try {
+    await fetch('/api/call?type=' + type, { method: 'POST' });
+    await refreshToday();
+  } catch(e) {
+    console.error('API error', e);
+  }
+}
+
+async function refreshToday() {
+  const res = await fetch('/api/today');
+  todaySlots = await res.json();
+  renderAll();
+}
+
+async function refreshHistory() {
+  const res = await fetch('/api/history');
+  histData = await res.json();
+  renderHistory();
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function pct(a, b) { return b === 0 ? 0 : Math.round((a / b) * 100); }
+
+function todayTotals() {
+  let tot = 0, acc = 0, agr = 0, cb = 0;
+  (todaySlots || []).forEach(s => { tot += s.total; acc += s.accepted; agr += s.agreed; cb += (s.callback||0); });
+  return { tot, acc, agr, cb };
+}
+
+function currentSlot() {
+  return (todaySlots || []).find(s => s.hour === currentHour) || { total:0, accepted:0, agreed:0 };
+}
+
+// ── Metrics ───────────────────────────────────────────────────
+function renderMetrics() {
+  const { tot, acc, agr } = todayTotals();
+  document.getElementById('m-total').textContent = tot;
+  document.getElementById('m-accepted').textContent = acc;
+  document.getElementById('m-agreed').textContent = agr;
+  document.getElementById('m-acc-pct').textContent = tot ? pct(acc, tot) + '% від всіх' : '— %';
+  document.getElementById('m-agr-pct').textContent = acc ? pct(agr, acc) + '% від прийнятих' : '— %';
+  const { cb } = todayTotals();
+  document.getElementById('m-callback').textContent = cb;
+  document.getElementById('m-cb-pct').textContent = tot ? pct(cb, tot) + '% від всіх' : '— %';
+
+  // current hour counts
+  const cs = currentSlot();
+  document.getElementById('cnt-total').textContent    = cs.total;
+  document.getElementById('cnt-accepted').textContent = cs.accepted;
+  document.getElementById('cnt-agreed').textContent   = cs.agreed;
+  document.getElementById('cnt-callback').textContent = cs.callback || 0;
+
+  // best hour
+  if (todaySlots && todaySlots.length) {
+    const best = [...todaySlots].sort((a,b) => b.agreed - a.agreed)[0];
+    document.getElementById('m-best').textContent = best.agreed > 0 ? best.hour : '—';
+    document.getElementById('m-best-sub').textContent = best.agreed > 0 ? best.agreed + ' погоджень' : 'поки немає даних';
+  }
+}
+
+// ── Bar chart ─────────────────────────────────────────────────
+const axisStyle = { color: COLORS.tick, font: { family: "'IBM Plex Mono', monospace", size: 10 } };
+const gridStyle = { color: COLORS.grid };
+const tooltipStyle = {
+  backgroundColor:'#1e2230', borderColor:'rgba(255,255,255,0.1)', borderWidth:1,
+  titleColor:'#9aa0b0', bodyColor:'#e8eaf0',
+  titleFont:{family:"'IBM Plex Mono',monospace",size:10},
+  bodyFont:{family:"'IBM Plex Sans',sans-serif",size:13},
+  padding:10,
+};
+
+// Chart.js plugin: draws a thin red vertical line at the current hour bar
+const nowLinePlugin = {
+  id: 'nowLine',
+  afterDraw(chart) {
+    const meta = chart.getDatasetMeta(0);
+    if (!meta || !meta.data) return;
+    const labels = chart.data.labels || [];
+    const idx = labels.indexOf(currentHour);
+    if (idx < 0 || !meta.data[idx]) return;
+
+    const bar  = meta.data[idx];
+    const x    = bar.x + bar.width / 2;
+    const yTop = chart.chartArea.top;
+    const yBot = chart.chartArea.bottom;
+    const ctx  = chart.ctx;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, yTop);
+    ctx.lineTo(x, yBot);
+    ctx.strokeStyle = '#e05555';
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+function renderBarChart() {
+  // Always build full 24-hour labels array
+  const all24 = Array.from({length:24}, (_,h) => String(h).padStart(2,'0')+':00');
+
+  // Map existing slot data onto the 24h grid
+  const slotMap = {};
+  (todaySlots || []).forEach(s => { slotMap[s.hour] = s; });
+
+  const totals   = all24.map(h => (slotMap[h] || {}).total    || 0);
+  const accepted = all24.map(h => (slotMap[h] || {}).accepted || 0);
+  const agreed   = all24.map(h => (slotMap[h] || {}).agreed   || 0);
+  const callback = all24.map(h => (slotMap[h] || {}).callback || 0);
+
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    plugins: [nowLinePlugin],
+    data: {
+      labels: all24,
+      datasets: [
+        { label:'Всього',    data: totals,   backgroundColor: COLORS.blue,  borderRadius: 3 },
+        { label:'Прийнято',  data: accepted, backgroundColor: COLORS.green, borderRadius: 3 },
+        { label:'Погоджено', data: agreed,   backgroundColor: COLORS.amber, borderRadius: 3 },
+        { label:'Передзвонити', data: callback, backgroundColor: COLORS.red,   borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip: tooltipStyle },
+      scales: {
+        x: { ticks:{ ...axisStyle, autoSkip:true, maxTicksLimit:12, maxRotation:0 }, grid: gridStyle },
+        y: { beginAtZero:true, ticks: axisStyle, grid: gridStyle }
+      }
+    }
+  });
+}
+
+// ── Line charts ───────────────────────────────────────────────
+function renderLineCharts() {
+  const slots = todaySlots || [];
+  if (slots.length === 0) return;
+
+  const labels  = slots.map(s => s.hour);
+  const convAcc = slots.map(s => pct(s.accepted, s.total));
+  const convAgr = slots.map(s => pct(s.agreed, s.accepted));
+
+  const lineOpts = (color, dimColor, yLabel) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{ display:false }, tooltip: tooltipStyle },
+    scales: {
+      x: { ticks:{ ...axisStyle, autoSkip:false, maxRotation:45 }, grid: gridStyle },
+      y: { min:0, max:100, ticks:{ ...axisStyle, callback: v => v+'%' }, grid: gridStyle }
+    }
+  });
+
+  const lineDs = (data, color, dimColor) => ({
+    data, borderColor: color, backgroundColor: dimColor,
+    fill: true, tension: 0.4,
+    pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: color, borderWidth: 2,
+  });
+
+  if (lineChart1) lineChart1.destroy();
+  lineChart1 = new Chart(document.getElementById('lineChart1'), {
+    type: 'line',
+    data: { labels, datasets: [{ ...lineDs(convAcc, COLORS.green, COLORS.greenDim), label:'Прийнято %' }] },
+    options: lineOpts(COLORS.green, COLORS.greenDim)
+  });
+
+  if (lineChart2) lineChart2.destroy();
+  lineChart2 = new Chart(document.getElementById('lineChart2'), {
+    type: 'line',
+    data: { labels, datasets: [{ ...lineDs(convAgr, COLORS.amber, COLORS.amberDim), label:'Погоджено %' }] },
+    options: lineOpts(COLORS.amber, COLORS.amberDim)
+  });
+}
+
+// ── History chart ─────────────────────────────────────────────
+function renderHistory() {
+  if (!histData || histData.length === 0) return;
+
+  const labels   = histData.map(d => d.date.slice(5)); // MM-DD
+  const totals   = histData.map(d => d.total);
+  const accepted = histData.map(d => d.accepted);
+  const agreed   = histData.map(d => d.agreed);
+
+  if (histChart) histChart.destroy();
+
+  const isLine = histViewType === 'line';
+  const mkDs = (label, data, color, dimColor) => ({
+    label, data,
+    backgroundColor: isLine ? dimColor : color,
+    borderColor: color,
+    borderWidth: isLine ? 2 : 0,
+    fill: isLine,
+    tension: isLine ? 0.4 : undefined,
+    borderRadius: isLine ? undefined : 3,
+    pointRadius: isLine ? 3 : undefined,
+    pointBackgroundColor: isLine ? color : undefined,
+  });
+
+  histChart = new Chart(document.getElementById('histChart'), {
+    type: isLine ? 'line' : 'bar',
+    data: {
+      labels,
+      datasets: [
+        mkDs('Всього',    totals,   COLORS.blue,  COLORS.blueDim),
+        mkDs('Прийнято', accepted, COLORS.green, COLORS.greenDim),
+        mkDs('Погоджено',agreed,   COLORS.amber, COLORS.amberDim),
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip: tooltipStyle },
+      scales: {
+        x: { ticks:{ ...axisStyle, autoSkip:false, maxRotation:45 }, grid: gridStyle },
+        y: { beginAtZero:true, ticks: axisStyle, grid: gridStyle }
+      }
+    }
+  });
+}
+
+function setHistView(type, el) {
+  histViewType = type;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory();
+}
+
+// ── Main render ───────────────────────────────────────────────
+function renderAll() {
+  renderMetrics();
+  renderBarChart();
+  renderLineCharts();
+}
+
+// ── Init & polling ────────────────────────────────────────────
+document.getElementById('footer-date').textContent =
+  '// ' + new Date().toLocaleString('uk-UA', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+async function init() {
+  await refreshToday();
+  await refreshHistory();
+}
+init();
+
+// Poll every 30 sec for multi-device sync
+setInterval(async () => {
+  await refreshToday();
+  await refreshHistory();
+}, 30000);
+</script>
+</body>
+</html>
