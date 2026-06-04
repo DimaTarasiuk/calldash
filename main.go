@@ -13,8 +13,7 @@ import (
 
 //go:embed index.html
 var indexHTML []byte
-loc, _ := time.LoadLocation("Europe/Kyiv")
-now := time.Now().In(loc)
+var loc, _ = time.LoadLocation("Europe/Kyiv")
 
 // ── Data structures ──────────────────────────────────────────────
 
