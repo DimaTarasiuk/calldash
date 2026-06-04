@@ -219,30 +219,25 @@ func main() {
 	if err != nil {
 		log.Fatal("cannot resolve executable path:", err)
 	}
-	// calls.json зберігається поруч з бінарником
+
 	dataFile = filepath.Join(filepath.Dir(exe), "calls.json")
 	log.Printf("data file : %s", dataFile)
 
 	loadStore()
 
-	http.HandleFunc("/api/call",    handleCall)
-	http.HandleFunc("/api/today",   handleToday)
+	http.HandleFunc("/api/call", handleCall)
+	http.HandleFunc("/api/today", handleToday)
 	http.HandleFunc("/api/history", handleHistory)
-	http.HandleFunc("/api/now",     handleNow)
-	http.HandleFunc("/",            handleStatic)
+	http.HandleFunc("/api/now", handleNow)
+	http.HandleFunc("/", handleStatic)
 
-	addr := ":8080"
-	log.Printf("✓ Dashboard running at http://localhost%s", addr)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	go func() {
-		time.Sleep(300 * time.Millisecond)
-		proc, err := os.StartProcess("/usr/bin/open",
-			[]string{"open", "http://localhost" + addr},
-			&os.ProcAttr{})
-		if err == nil {
-			proc.Wait()
-		}
-	}()
+	addr := ":" + port
+	log.Printf("Listening on %s", addr)
 
 	log.Fatal(http.ListenAndServe(addr, nil))
 }

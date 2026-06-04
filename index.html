@@ -466,11 +466,11 @@ async function init() {
 }
 init();
 
-// Poll every 30 sec for multi-device sync
+// Poll every 60 sec for multi-device sync
 setInterval(async () => {
   await refreshToday();
   await refreshHistory();
-}, 30000);
+}, 60000);
 </script>
 </body>
 </html>
