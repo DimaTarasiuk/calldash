@@ -4,9 +4,11 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -33,6 +35,12 @@ type DayRecord struct {
 
 type Store struct {
 	Days []DayRecord `json:"days"`
+}
+
+type GeoIPInfo struct {
+	City        string `json:"city"`
+	CountryName string `json:"country_name"`
+	CountryCode string `json:"country_code"`
 }
 
 // ── Global state ─────────────────────────────────────────────────
@@ -164,7 +172,7 @@ func handleCall(w http.ResponseWriter, r *http.Request) {
 		slot.Accepted++
 	case "agreed":
 		slot.Total++
-		slot.Accepted++
+		//slot.Accepted++
 		slot.Agreed++
 	case "callback":
 		slot.Total++
@@ -337,19 +345,76 @@ func handleStatic(w http.ResponseWriter, r *http.Request) {
 	w.Write(indexHTML)
 }
 
+func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		ip := r.Header.Get("X-Forwarded-For")
+		if ip == "" {
+			ip = r.RemoteAddr
+		}
+		if idx := strings.LastIndex(ip, ":"); idx != -1 {
+			ip = ip[:idx]
+		}
+
+		cityInfo := getCityFromIP(ip)
+
+		next.ServeHTTP(w, r)
+
+		duration := time.Since(start)
+		log.Printf("[%s] %s %s | IP: %s | Location: %s, %s | Duration: %v",
+			start.Format("2006-01-02 15:04:05"),
+			r.Method,
+			r.URL.Path,
+			ip,
+			cityInfo.City,
+			cityInfo.CountryName,
+			duration,
+		)
+	}
+}
+
+//IP
+func getCityFromIP(ip string) GeoIPInfo {
+	if ip == "" || ip == "127.0.0.1" || ip == "::1" {
+		return GeoIPInfo{City: "Local", CountryName: "Local"}
+	}
+
+	url := fmt.Sprintf("https://ipapi.co/%s/json/", ip)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return GeoIPInfo{City: "Unknown", CountryName: ""}
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return GeoIPInfo{City: "Unknown", CountryName: ""}
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	var info GeoIPInfo
+	json.Unmarshal(body, &info)
+
+	if info.City == "" {
+		info.City = "Unknown"
+	}
+	return info
+}
+
 // ── Main ─────────────────────────────────────────────────────────
 
 func main() {
 	log.Println("Data file:", dataFile)
 	loadStore()
 
-	http.HandleFunc("/api/call", handleCall)
-	http.HandleFunc("/api/today", handleToday)
-	http.HandleFunc("/api/history", handleHistory)
-	http.HandleFunc("/api/slot", handleSlotEdit)
-	http.HandleFunc("/api/day", handleDayEdit)
-	http.HandleFunc("/api/now", handleNow)
-	http.HandleFunc("/", handleStatic)
+	http.HandleFunc("/api/call", loggingMiddleware(handleCall))
+	http.HandleFunc("/api/today", loggingMiddleware(handleToday))
+	http.HandleFunc("/api/history", loggingMiddleware(handleHistory))
+	http.HandleFunc("/api/slot", loggingMiddleware(handleSlotEdit))
+	http.HandleFunc("/api/day", loggingMiddleware(handleDayEdit))
+	http.HandleFunc("/api/now", loggingMiddleware(handleNow))
+	http.HandleFunc("/", loggingMiddleware(handleStatic))
 
 	port := os.Getenv("PORT")
 	if port == "" {

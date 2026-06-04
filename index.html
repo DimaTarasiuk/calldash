@@ -181,35 +181,31 @@ h1 span{color:var(--blue);font-weight:500}
 <!-- INPUT PANEL -->
 <div class="input-panel">
   <p class="input-title">Записати дзвінок</p>
-  <div class="btn-row">
-    <button class="call-btn total" onclick="logCall('total')" id="btn-total">
-      <span class="btn-label">Дзвінок</span>
-      <span class="btn-hint">загальний</span>
-      <span class="btn-count" id="cnt-total">0</span>
-    </button>
-    <button class="call-btn accepted" onclick="logCall('accepted')" id="btn-accepted">
-      <span class="btn-label">Прийнято</span>
-      <span class="btn-hint">+ дзвінок</span>
-      <span class="btn-count" id="cnt-accepted">0</span>
-    </button>
-    <button class="call-btn agreed" onclick="logCall('agreed')" id="btn-agreed">
-      <span class="btn-label">Погоджено</span>
-      <span class="btn-hint">+ прийнято</span>
-      <span class="btn-count" id="cnt-agreed">0</span>
-    </button>
-    <button class="call-btn callback" onclick="logCall('callback')" id="btn-callback">
-      <span class="btn-label">Передзвонити</span>
-      <span class="btn-hint">після обіду</span>
-      <span class="btn-count" id="cnt-callback">0</span>
-    </button>
-  </div>
+ <div class="btn-row">
+  <button class="call-btn total" onclick="logCall('total')" id="btn-total">
+    <span class="btn-label">Дзвінок</span>
+    <span class="btn-hint">загальний</span>
+  </button>
+  <button class="call-btn accepted" onclick="logCall('accepted')" id="btn-accepted">
+    <span class="btn-label">Прийнято</span>
+    <span class="btn-hint">+ дзвінок</span>
+  </button>
+  <button class="call-btn agreed" onclick="logCall('agreed')" id="btn-agreed">
+    <span class="btn-label">Не взяли трубку</span>
+    <span class="btn-hint">+ прийнято</span>
+  </button>
+  <button class="call-btn callback" onclick="logCall('callback')" id="btn-callback">
+    <span class="btn-label">Передзвонити</span>
+    <span class="btn-hint">після обіду</span>
+  </button>
+</div>
 </div>
 
 <!-- METRICS -->
 <div class="metrics" id="metrics">
   <div class="metric blue"><p class="m-label">Всього сьогодні</p><p class="m-value" id="m-total">0</p></div>
-  <div class="metric green"><p class="m-label">Прийнято</p><p class="m-value" id="m-accepted">0</p><p class="m-sub" id="m-acc-pct">— %</p></div>
-  <div class="metric amber"><p class="m-label">Погоджено</p><p class="m-value" id="m-agreed">0</p><p class="m-sub" id="m-agr-pct">— %</p></div>
+  <div class="metric green"><p class="m-label">Записалось</p><p class="m-value" id="m-accepted">0</p><p class="m-sub" id="m-acc-pct">— %</p></div>
+  <div class="metric amber"><p class="m-label">Не взяли трубку</p><p class="m-value" id="m-agreed">0</p><p class="m-sub" id="m-agr-pct">— %</p></div>
   <div class="metric red"><p class="m-label">Передзвонити</p><p class="m-value" id="m-callback">0</p><p class="m-sub" id="m-cb-pct">— %</p></div>
   <div class="metric purple"><p class="m-label">Найкращий час</p><p class="m-value" id="m-best">—</p><p class="m-sub" id="m-best-sub">—</p></div>
 </div>
@@ -219,8 +215,8 @@ h1 span{color:var(--blue);font-weight:500}
   <p class="chart-label">Обсяг дзвінків · сьогодні по годинах</p>
   <div class="legend" id="main-legend">
   <span class="l-item active" data-dataset="0"><span class="l-dot" style="background:#4e8ef7"></span>Всього</span>
-  <span class="l-item active" data-dataset="1"><span class="l-dot" style="background:#36c98e"></span>Прийнято</span>
-  <span class="l-item active" data-dataset="2"><span class="l-dot" style="background:#f0a030"></span>Погоджено</span>
+  <span class="l-item active" data-dataset="1"><span class="l-dot" style="background:#36c98e"></span>Записалось</span>
+  <span class="l-item active" data-dataset="2"><span class="l-dot" style="background:#f0a030"></span>Не взяли трубку</span>
   <span class="l-item active" data-dataset="3"><span class="l-dot" style="background:#e05555"></span>Передзвонити</span>
   <span style="display:inline-block;width:2px;height:10px;background:#e05555;opacity:.5;margin-right:3px;vertical-align:middle"></span>Зараз
   </span>
@@ -231,11 +227,11 @@ h1 span{color:var(--blue);font-weight:500}
 <!-- CONVERSION CHARTS -->
 <div class="two-col">
   <div class="chart-card">
-    <p class="chart-label">Прийнято / Всього (%)</p>
+    <p class="chart-label">Записалось / Всього (%)</p>
     <div class="chart-wrap-sm"><canvas id="lineChart1" role="img"></canvas></div>
   </div>
   <div class="chart-card">
-    <p class="chart-label">Погоджено / Прийнято (%)</p>
+    <p class="chart-label">Не взяли трубку / Записалось (%)</p>
     <div class="chart-wrap-sm"><canvas id="lineChart2" role="img"></canvas></div>
   </div>
 </div>
@@ -270,11 +266,11 @@ h1 span{color:var(--blue);font-weight:500}
         <input class="field-input" type="number" min="0" id="f-total">
       </div>
       <div class="field-group">
-        <label class="field-label green" for="f-accepted">Прийнято</label>
+        <label class="field-label green" for="f-accepted">Записалось</label>
         <input class="field-input" type="number" min="0" id="f-accepted">
       </div>
       <div class="field-group">
-        <label class="field-label amber" for="f-agreed">Погоджено</label>
+        <label class="field-label amber" for="f-agreed">Не взяли трубку</label>
         <input class="field-input" type="number" min="0" id="f-agreed">
       </div>
       <div class="field-group">
@@ -480,11 +476,7 @@ function renderMetrics() {
   document.getElementById('m-agr-pct').textContent  = acc ? pct(agr, acc) + '% від прийнятих' : '— %';
   document.getElementById('m-cb-pct').textContent   = tot ? pct(cb, tot) + '% від всіх' : '— %';
 
-  const cs = currentSlot();
-  document.getElementById('cnt-total').textContent    = cs.total;
-  document.getElementById('cnt-accepted').textContent = cs.accepted;
-  document.getElementById('cnt-agreed').textContent   = cs.agreed;
-  document.getElementById('cnt-callback').textContent = cs.callback || 0;
+
 
   if (todaySlots && todaySlots.length) {
     const best = [...todaySlots].sort((a,b) => b.agreed - a.agreed)[0];
@@ -566,17 +558,17 @@ function renderBarChart() {
           data: totals, 
           backgroundColor: COLORS.blue,  
           borderRadius: 3,
-          hidden: true 
+          hidden: false 
         },
         { 
-          label: 'Прийнято', 
+          label: 'Записалось', 
           data: accepted, 
           backgroundColor: COLORS.green, 
           borderRadius: 3,
           hidden: false 
         },
         { 
-          label: 'Погоджено', 
+          label: 'Не взяли трубку', 
           data: agreed,   
           backgroundColor: COLORS.amber, 
           borderRadius: 3,
@@ -643,8 +635,8 @@ function renderBarChart() {
       labels: all24,
       datasets: [
         { label:'Всього',       data: totals,   backgroundColor: COLORS.blue,  borderRadius: 3 },
-        { label:'Прийнято',     data: accepted, backgroundColor: COLORS.green, borderRadius: 3 },
-        { label:'Погоджено',    data: agreed,   backgroundColor: COLORS.amber, borderRadius: 3 },
+        { label:'Записалось',     data: accepted, backgroundColor: COLORS.green, borderRadius: 3 },
+        { label:'Не взяли трубку',    data: agreed,   backgroundColor: COLORS.amber, borderRadius: 3 },
         { label:'Передзвонити', data: callback, backgroundColor: COLORS.red,   borderRadius: 3 },
       ]
     },
@@ -680,7 +672,7 @@ function renderLineCharts() {
   if (lineChart1) lineChart1.destroy();
   lineChart1 = new Chart(document.getElementById('lineChart1'), {
     type: 'line',
-    data: { labels, datasets: [{ ...lineDs(convAcc, COLORS.green, COLORS.greenDim), label:'Прийнято %' }] },
+    data: { labels, datasets: [{ ...lineDs(convAcc, COLORS.green, COLORS.greenDim), label:'Записалось %' }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend:{ display:false }, tooltip: tooltipStyle },
@@ -694,7 +686,7 @@ function renderLineCharts() {
   if (lineChart2) lineChart2.destroy();
   lineChart2 = new Chart(document.getElementById('lineChart2'), {
     type: 'line',
-    data: { labels, datasets: [{ ...lineDs(convAgr, COLORS.amber, COLORS.amberDim), label:'Погоджено %' }] },
+    data: { labels, datasets: [{ ...lineDs(convAgr, COLORS.amber, COLORS.amberDim), label:'Не взяли трубку %' }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend:{ display:false }, tooltip: tooltipStyle },
@@ -747,8 +739,8 @@ function renderHistory() {
       labels,
       datasets: [
         mkDs('Всього',    totals,   COLORS.blue,  COLORS.blueDim),
-        mkDs('Прийнято', accepted, COLORS.green, COLORS.greenDim),
-        mkDs('Погоджено',agreed,   COLORS.amber, COLORS.amberDim),
+        mkDs('Записалось', accepted, COLORS.green, COLORS.greenDim),
+        mkDs('Не взяли трубку',agreed,   COLORS.amber, COLORS.amberDim),
       ]
     },
     options: {

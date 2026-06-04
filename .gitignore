@@ -6,6 +6,7 @@
 *.dylib
 *.test
 *.out
+*.json
 
 # Dependency directories
 vendor/
