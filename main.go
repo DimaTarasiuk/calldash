@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 )
@@ -39,7 +38,7 @@ type Store struct {
 var (
 	mu       sync.Mutex
 	store    Store
-	dataFile string
+	dataFile = "calls.json"
 )
 
 // ── Persistence ──────────────────────────────────────────────────
@@ -50,24 +49,19 @@ func loadStore() {
 		store = Store{}
 		return
 	}
-	json.Unmarshal(data, &store)
-}
-
-func reloadStore() {
-	data, err := os.ReadFile(dataFile)
-	if err != nil {
-		return
-	}
-	var fresh Store
-	if err := json.Unmarshal(data, &fresh); err != nil {
-		return
-	}
-	store = fresh
+	_ = json.Unmarshal(data, &store)
 }
 
 func saveStore() {
-	data, _ := json.MarshalIndent(store, "", "  ")
-	os.WriteFile(dataFile, data, 0644)
+	data, err := json.MarshalIndent(store, "", "  ")
+	if err != nil {
+		log.Println("marshal error:", err)
+		return
+	}
+
+	if err := os.WriteFile(dataFile, data, 0644); err != nil {
+		log.Println("write error:", err)
+	}
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -82,15 +76,24 @@ func currentHourLabel() string {
 
 func getToday() *DayRecord {
 	today := todayKey()
+
 	for i := range store.Days {
 		if store.Days[i].Date == today {
 			return &store.Days[i]
 		}
 	}
-	rec := DayRecord{Date: today, Slots: make([]HourSlot, 24)}
-	for h := 0; h < 24; h++ {
-		rec.Slots[h] = HourSlot{Hour: fmt.Sprintf("%02d:00", h)}
+
+	rec := DayRecord{
+		Date:  today,
+		Slots: make([]HourSlot, 24),
 	}
+
+	for h := 0; h < 24; h++ {
+		rec.Slots[h] = HourSlot{
+			Hour: fmt.Sprintf("%02d:00", h),
+		}
+	}
+
 	store.Days = append(store.Days, rec)
 	return &store.Days[len(store.Days)-1]
 }
@@ -111,6 +114,7 @@ func handleCall(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", 405)
 		return
 	}
+
 	callType := r.URL.Query().Get("type")
 	if callType == "" {
 		callType = "total"
@@ -142,15 +146,15 @@ func handleCall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	saveStore()
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(slot)
+	_ = json.NewEncoder(w).Encode(slot)
 }
 
 func handleToday(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	reloadStore()
 	day := getToday()
 	curHour := currentHourLabel()
 
@@ -162,14 +166,12 @@ func handleToday(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	_ = json.NewEncoder(w).Encode(result)
 }
 
 func handleHistory(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
-
-	reloadStore()
 
 	type DaySummary struct {
 		Date     string `json:"date"`
@@ -180,33 +182,43 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var out []DaySummary
+
 	for _, d := range store.Days {
-		var tot, acc, agr int
-		var cb int
+		var tot, acc, agr, cb int
+
 		for _, s := range d.Slots {
 			tot += s.Total
 			acc += s.Accepted
 			agr += s.Agreed
 			cb += s.Callback
 		}
-		out = append(out, DaySummary{Date: d.Date, Total: tot, Accepted: acc, Agreed: agr, Callback: cb})
+
+		out = append(out, DaySummary{
+			Date:     d.Date,
+			Total:    tot,
+			Accepted: acc,
+			Agreed:   agr,
+			Callback: cb,
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(out)
+	_ = json.NewEncoder(w).Encode(out)
 }
 
 func handleNow(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	_ = json.NewEncoder(w).Encode(map[string]string{
 		"time": now.Format("15:04:05"),
 		"hour": fmt.Sprintf("%02d:00", now.Hour()),
 		"date": now.Format("2006-01-02"),
 	})
 }
 
-// index.html вшитий в бінарник через //go:embed
+// ── Static ───────────────────────────────────────────────────────
+
 func handleStatic(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(indexHTML)
@@ -215,34 +227,23 @@ func handleStatic(w http.ResponseWriter, r *http.Request) {
 // ── Main ─────────────────────────────────────────────────────────
 
 func main() {
-	exe, err := os.Executable()
-	if err != nil {
-		log.Fatal("cannot resolve executable path:", err)
-	}
-	// calls.json зберігається поруч з бінарником
-	dataFile = filepath.Join(filepath.Dir(exe), "calls.json")
-	log.Printf("data file : %s", dataFile)
+	log.Println("data file:", dataFile)
 
 	loadStore()
 
-	http.HandleFunc("/api/call",    handleCall)
-	http.HandleFunc("/api/today",   handleToday)
+	http.HandleFunc("/api/call", handleCall)
+	http.HandleFunc("/api/today", handleToday)
 	http.HandleFunc("/api/history", handleHistory)
-	http.HandleFunc("/api/now",     handleNow)
-	http.HandleFunc("/",            handleStatic)
+	http.HandleFunc("/api/now", handleNow)
+	http.HandleFunc("/", handleStatic)
 
-	addr := ":8080"
-	log.Printf("✓ Dashboard running at http://localhost%s", addr)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	go func() {
-		time.Sleep(300 * time.Millisecond)
-		proc, err := os.StartProcess("/usr/bin/open",
-			[]string{"open", "http://localhost" + addr},
-			&os.ProcAttr{})
-		if err == nil {
-			proc.Wait()
-		}
-	}()
+	addr := ":" + port
+	log.Println("Listening on", addr)
 
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
