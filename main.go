@@ -13,6 +13,8 @@ import (
 
 //go:embed index.html
 var indexHTML []byte
+loc, _ := time.LoadLocation("Europe/Kyiv")
+now := time.Now().In(loc)
 
 // ── Data structures ──────────────────────────────────────────────
 
@@ -67,11 +69,11 @@ func saveStore() {
 // ── Helpers ───────────────────────────────────────────────────────
 
 func todayKey() string {
-	return time.Now().Format("2006-01-02")
+	return time.Now().In(loc).Format("2006-01-02")
 }
 
 func currentHourLabel() string {
-	return fmt.Sprintf("%02d:00", time.Now().Hour())
+	return fmt.Sprintf("%02d:00", time.Now().In(loc).Hour())
 }
 
 func getToday() *DayRecord {
@@ -207,7 +209,7 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleNow(w http.ResponseWriter, r *http.Request) {
-	now := time.Now()
+	now := time.Now().In(loc)
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{
