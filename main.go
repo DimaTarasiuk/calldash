@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -17,8 +16,6 @@ import (
 var indexHTML []byte
 
 var loc, _ = time.LoadLocation("Europe/Kyiv")
-
-// ── Data structures ──────────────────────────────────────────────
 
 type HourSlot struct {
 	Hour     string `json:"hour"`
@@ -43,15 +40,11 @@ type GeoIPInfo struct {
 	CountryCode string `json:"country_code"`
 }
 
-// ── Global state ─────────────────────────────────────────────────
-
 var (
 	mu       sync.Mutex
 	store    Store
 	dataFile = "calls.json"
 )
-
-// ── Persistence ──────────────────────────────────────────────────
 
 func loadStore() {
 	data, err := os.ReadFile(dataFile)
@@ -74,8 +67,6 @@ func saveStore() {
 	}
 }
 
-// ── Helpers ───────────────────────────────────────────────────────
-
 func todayKey() string {
 	return time.Now().In(loc).Format("2006-01-02")
 }
@@ -93,7 +84,6 @@ func getToday() *DayRecord {
 		}
 	}
 
-	// Створюємо новий день
 	rec := DayRecord{
 		Date:  today,
 		Slots: make([]HourSlot, 24),
@@ -140,8 +130,6 @@ func createNewDay(date string) *DayRecord {
 	store.Days = append(store.Days, rec)
 	return &store.Days[len(store.Days)-1]
 }
-
-// ── Handlers ─────────────────────────────────────────────────────
 
 func handleCall(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -190,17 +178,9 @@ func handleToday(w http.ResponseWriter, r *http.Request) {
 	defer mu.Unlock()
 
 	day := getToday()
-	curHour := currentHourLabel()
-
-	var result []HourSlot
-	for _, s := range day.Slots {
-		if s.Hour <= curHour {
-			result = append(result, s)
-		}
-	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(result)
+	_ = json.NewEncoder(w).Encode(day.Slots)
 }
 
 func handleHistory(w http.ResponseWriter, r *http.Request) {
@@ -273,7 +253,14 @@ func handleSlotEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slot.Total = payload.Total
+	// Ensure total is at least the sum of subsets if not explicitly provided larger
+	minTotal := payload.Accepted + payload.Agreed + payload.Callback
+	if payload.Total < minTotal {
+		slot.Total = minTotal
+	} else {
+		slot.Total = payload.Total
+	}
+
 	slot.Accepted = payload.Accepted
 	slot.Agreed = payload.Agreed
 	slot.Callback = payload.Callback
@@ -318,7 +305,12 @@ func handleDayEdit(w http.ResponseWriter, r *http.Request) {
 
 	if len(day.Slots) > 0 {
 		firstSlot := &day.Slots[0]
-		firstSlot.Total = payload.Total
+		minTotal := payload.Accepted + payload.Agreed + payload.Callback
+		if payload.Total < minTotal {
+			firstSlot.Total = minTotal
+		} else {
+			firstSlot.Total = payload.Total
+		}
 		firstSlot.Accepted = payload.Accepted
 		firstSlot.Agreed = payload.Agreed
 		firstSlot.Callback = payload.Callback
@@ -357,52 +349,19 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			ip = ip[:idx]
 		}
 
-		cityInfo := getCityFromIP(ip)
 
 		next.ServeHTTP(w, r)
 
 		duration := time.Since(start)
-		log.Printf("[%s] %s %s | IP: %s | Location: %s, %s | Duration: %v",
+		log.Printf("[%s] %s %s | IP: %s | Duration: %v",
 			start.Format("2006-01-02 15:04:05"),
 			r.Method,
 			r.URL.Path,
 			ip,
-			cityInfo.City,
-			cityInfo.CountryName,
 			duration,
 		)
 	}
 }
-
-//IP
-func getCityFromIP(ip string) GeoIPInfo {
-	if ip == "" || ip == "127.0.0.1" || ip == "::1" {
-		return GeoIPInfo{City: "Local", CountryName: "Local"}
-	}
-
-	url := fmt.Sprintf("https://ipapi.co/%s/json/", ip)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return GeoIPInfo{City: "Unknown", CountryName: ""}
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return GeoIPInfo{City: "Unknown", CountryName: ""}
-	}
-
-	body, _ := io.ReadAll(resp.Body)
-	var info GeoIPInfo
-	json.Unmarshal(body, &info)
-
-	if info.City == "" {
-		info.City = "Unknown"
-	}
-	return info
-}
-
-// ── Main ─────────────────────────────────────────────────────────
 
 func main() {
 	log.Println("Data file:", dataFile)

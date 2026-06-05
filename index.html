@@ -227,11 +227,11 @@ h1 span{color:var(--blue);font-weight:500}
 <!-- CONVERSION CHARTS -->
 <div class="two-col">
   <div class="chart-card">
-    <p class="chart-label">Записалось / Всього (%)</p>
+    <p class="chart-label">Передзвонити / Всього (%)</p>
     <div class="chart-wrap-sm"><canvas id="lineChart1" role="img"></canvas></div>
   </div>
   <div class="chart-card">
-    <p class="chart-label">Не взяли трубку / Записалось (%)</p>
+    <p class="chart-label">Не взяли трубку / Всього (%)</p>
     <div class="chart-wrap-sm"><canvas id="lineChart2" role="img"></canvas></div>
   </div>
 </div>
@@ -457,7 +457,12 @@ function pct(a, b) { return b === 0 ? 0 : Math.round((a / b) * 100); }
 
 function todayTotals() {
   let tot = 0, acc = 0, agr = 0, cb = 0;
-  (todaySlots || []).forEach(s => { tot += s.total; acc += s.accepted; agr += s.agreed; cb += (s.callback||0); });
+  (todaySlots || []).forEach(s => { 
+    tot += (s.total || 0); 
+    acc += (s.accepted || 0); 
+    agr += (s.agreed || 0); 
+    cb  += (s.callback || 0); 
+  });
   return { tot, acc, agr, cb };
 }
 
@@ -473,15 +478,15 @@ function renderMetrics() {
   document.getElementById('m-agreed').textContent   = agr;
   document.getElementById('m-callback').textContent = cb;
   document.getElementById('m-acc-pct').textContent  = tot ? pct(acc, tot) + '% від всіх' : '— %';
-  document.getElementById('m-agr-pct').textContent  = acc ? pct(agr, acc) + '% від прийнятих' : '— %';
+  document.getElementById('m-agr-pct').textContent  = tot ? pct(agr, tot) + '% від всіх' : '— %';
   document.getElementById('m-cb-pct').textContent   = tot ? pct(cb, tot) + '% від всіх' : '— %';
 
 
 
   if (todaySlots && todaySlots.length) {
-    const best = [...todaySlots].sort((a,b) => b.agreed - a.agreed)[0];
-    document.getElementById('m-best').textContent    = best.agreed > 0 ? best.hour : '—';
-    document.getElementById('m-best-sub').textContent = best.agreed > 0 ? best.agreed + ' погоджень' : 'поки немає даних';
+    const best = [...todaySlots].sort((a,b) => b.accepted - a.accepted)[0];
+    document.getElementById('m-best').textContent    = (best && best.accepted > 0) ? best.hour : '—';
+    document.getElementById('m-best-sub').textContent = (best && best.accepted > 0) ? best.accepted + ' записів' : 'поки немає даних';
   }
 }
 
@@ -598,103 +603,84 @@ function renderBarChart() {
   });
 
   document.getElementById('barChart').style.cursor = 'pointer';
-
   setupLegendToggle();
 }
 
+// ── Line charts ───────────────────────────────────────────────
+function renderLineCharts() {
+  if (!todaySlots || todaySlots.length === 0) {
+    console.log("No data for conversion charts");
+    return;
+  }
 
+  // Показуємо години до поточної ВКЛЮЧНО, або ті, де є дані
+  const filtered = todaySlots.filter(s => s.hour <= currentHour || s.total > 0);
+  
+  const labels = filtered.map(s => s.hour);
+  const convCb  = filtered.map(s => pct(s.callback, s.total));
+  const convAgr = filtered.map(s => pct(s.agreed, s.total));
 
-  const all24 = Array.from({length:24}, (_,h) => String(h).padStart(2,'0')+':00');
-  const slotMap = {};
-  (todaySlots || []).forEach(s => { slotMap[s.hour] = s; });
+  // Destroy old charts if exist
+  if (lineChart1) lineChart1.destroy();
+  if (lineChart2) lineChart2.destroy();
 
-  const totals   = all24.map(h => (slotMap[h]||{}).total    || 0);
-  const accepted = all24.map(h => (slotMap[h]||{}).accepted || 0);
-  const agreed   = all24.map(h => (slotMap[h]||{}).agreed   || 0);
-  const callback = all24.map(h => (slotMap[h]||{}).callback || 0);
-
-  // Click plugin — opens slot editor
-  const clickPlugin = {
-    id: 'barClick',
-    afterEvent(chart, args) {
-      if (args.event.type !== 'click') return;
-      const points = chart.getElementsAtEventForMode(args.event.native, 'index', { intersect: false }, true);
-      if (!points.length) return;
-      const idx  = points[0].index;
-      const hour = all24[idx];
-      const slot = slotMap[hour] || { total:0, accepted:0, agreed:0, callback:0, hour };
-      openSlotModal(todayDate, hour, slot);
+  const lineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { 
+      legend: { display: false },
+      tooltip: tooltipStyle 
+    },
+    scales: {
+      x: { 
+        ticks: { ...axisStyle, maxRotation: 45 },
+        grid: gridStyle 
+      },
+      y: { 
+        min: 0, 
+        max: 100, 
+        ticks: { ...axisStyle, callback: v => v + '%' },
+        grid: gridStyle 
+      }
     }
   };
 
-  if (barChart) barChart.destroy();
-  barChart = new Chart(document.getElementById('barChart'), {
-    type: 'bar',
-    plugins: [nowLinePlugin, clickPlugin],
-    data: {
-      labels: all24,
-      datasets: [
-        { label:'Всього',       data: totals,   backgroundColor: COLORS.blue,  borderRadius: 3 },
-        { label:'Записалось',     data: accepted, backgroundColor: COLORS.green, borderRadius: 3 },
-        { label:'Не взяли трубку',    data: agreed,   backgroundColor: COLORS.amber, borderRadius: 3 },
-        { label:'Передзвонити', data: callback, backgroundColor: COLORS.red,   borderRadius: 3 },
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      cursor: 'pointer',
-      plugins: { legend:{ display:false }, tooltip: tooltipStyle },
-      scales: {
-        x: { ticks:{ ...axisStyle, autoSkip:true, maxTicksLimit:12, maxRotation:0 }, grid: gridStyle },
-        y: { beginAtZero:true, ticks: axisStyle, grid: gridStyle }
-      }
-    }
-  });
-
-  // Change cursor on hover
-  document.getElementById('barChart').style.cursor = 'pointer';
-
-
-// ── Line charts ───────────────────────────────────────────────
-function renderLineCharts() {
-  const slots = todaySlots || [];
-  if (slots.length === 0) return;
-  const labels  = slots.map(s => s.hour);
-  const convAcc = slots.map(s => pct(s.accepted, s.total));
-  const convAgr = slots.map(s => pct(s.agreed, s.accepted));
-
-  const lineDs = (data, color, dimColor) => ({
-    data, borderColor: color, backgroundColor: dimColor,
-    fill: true, tension: 0.4,
-    pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: color, borderWidth: 2,
-  });
-
-  if (lineChart1) lineChart1.destroy();
+  // Перший графік: Передзвонити / Всього
   lineChart1 = new Chart(document.getElementById('lineChart1'), {
     type: 'line',
-    data: { labels, datasets: [{ ...lineDs(convAcc, COLORS.green, COLORS.greenDim), label:'Записалось %' }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend:{ display:false }, tooltip: tooltipStyle },
-      scales: {
-        x: { ticks:{ ...axisStyle, autoSkip:false, maxRotation:45 }, grid: gridStyle },
-        y: { min:0, max:100, ticks:{ ...axisStyle, callback: v => v+'%' }, grid: gridStyle }
-      }
-    }
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Передзвонити %',
+        data: convCb,
+        borderColor: COLORS.red,
+        backgroundColor: COLORS.redDim,
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 3
+      }]
+    },
+    options: lineOptions
   });
 
-  if (lineChart2) lineChart2.destroy();
+  // Другий графік: Не взяли трубку / Всього
   lineChart2 = new Chart(document.getElementById('lineChart2'), {
     type: 'line',
-    data: { labels, datasets: [{ ...lineDs(convAgr, COLORS.amber, COLORS.amberDim), label:'Не взяли трубку %' }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend:{ display:false }, tooltip: tooltipStyle },
-      scales: {
-        x: { ticks:{ ...axisStyle, autoSkip:false, maxRotation:45 }, grid: gridStyle },
-        y: { min:0, max:100, ticks:{ ...axisStyle, callback: v => v+'%' }, grid: gridStyle }
-      }
-    }
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Не взяли трубку %',
+        data: convAgr,
+        borderColor: COLORS.amber,
+        backgroundColor: COLORS.amberDim,
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 3
+      }]
+    },
+    options: lineOptions
   });
 }
 
@@ -780,10 +766,10 @@ async function init() {
 }
 init();
 
-setInterval(async () => {
-  await refreshToday();
-  await refreshHistory();
-}, 60000);
+// setInterval(async () => {
+//   await refreshToday();
+//   await refreshHistory();
+// }, 60000);
 </script>
 </body>
 </html>
