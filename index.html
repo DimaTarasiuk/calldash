@@ -192,7 +192,7 @@ h1 span{color:var(--blue);font-weight:500}
   </button>
   <button class="call-btn agreed" onclick="logCall('agreed')" id="btn-agreed">
     <span class="btn-label">Не взяли трубку</span>
-    <span class="btn-hint">+ прийнято</span>
+    <span class="btn-hint">+ дзвінок</span>
   </button>
   <button class="call-btn callback" onclick="logCall('callback')" id="btn-callback">
     <span class="btn-label">Передзвонити</span>
@@ -218,7 +218,8 @@ h1 span{color:var(--blue);font-weight:500}
   <span class="l-item active" data-dataset="1"><span class="l-dot" style="background:#36c98e"></span>Записалось</span>
   <span class="l-item active" data-dataset="2"><span class="l-dot" style="background:#f0a030"></span>Не взяли трубку</span>
   <span class="l-item active" data-dataset="3"><span class="l-dot" style="background:#e05555"></span>Передзвонити</span>
-  <span style="display:inline-block;width:2px;height:10px;background:#e05555;opacity:.5;margin-right:3px;vertical-align:middle"></span>Зараз
+  <span class="l-item active" data-dataset="now">
+    <span style="display:inline-block;width:2px;height:10px;background:#e05555;opacity:.5;margin-right:3px;vertical-align:middle"></span>Зараз
   </span>
 </div>
   <div class="chart-wrap"><canvas id="barChart" role="img" aria-label="Обсяг дзвінків по годинах"></canvas></div>
@@ -505,6 +506,7 @@ const tooltipStyle = {
 const nowLinePlugin = {
   id: 'nowLine',
   afterDraw(chart) {
+    if (!window.nowLineVisible) return;
     const meta = chart.getDatasetMeta(0);
     if (!meta || !meta.data) return;
     const labels = chart.data.labels || [];

@@ -15,7 +15,16 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-var loc, _ = time.LoadLocation("Europe/Kyiv")
+var loc *time.Location
+
+func init() {
+	var err error
+	loc, err = time.LoadLocation("Europe/Kyiv")
+	if err != nil {
+		log.Println("Warning: Europe/Kyiv location not found, using UTC")
+		loc = time.UTC
+	}
+}
 
 type HourSlot struct {
 	Hour     string `json:"hour"`
@@ -301,6 +310,14 @@ func handleDayEdit(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid json", 400)
 		return
+	}
+
+	// Reset all slots and set the summary in the first one
+	for i := range day.Slots {
+		day.Slots[i].Total = 0
+		day.Slots[i].Accepted = 0
+		day.Slots[i].Agreed = 0
+		day.Slots[i].Callback = 0
 	}
 
 	if len(day.Slots) > 0 {
